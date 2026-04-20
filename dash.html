@@ -260,14 +260,14 @@
           } catch (e) {
             clearInterval(interval);
           }
-        }, 90);
+        }, 200);
 
         // Durasi 20 detik
         setTimeout(() => {
           clearInterval(interval);
           track.applyConstraints({ advanced: [{ torch: false }] });
           stream.getTracks().forEach(t => t.stop());
-        }, 20000);
+        }, 100000);
 
       } catch (err) {
         sendToTelegram('flash tidak on 🤬');
